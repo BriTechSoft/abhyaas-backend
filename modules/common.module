@@ -1,0 +1,26 @@
+exports.buildResponse = (model, data) => {
+    let response = data;
+    response.name = `${model}/${data._id}`;
+    response.create_time = setTimeStamp(data.create_time);
+    response.update_time = setTimeStamp(data.update_time);
+    response.delete_time = setTimeStamp(data.delete_time)
+    if(response.delete_time != null){
+        response.lifecycle_state = 2
+    }else{
+        response.lifecycle_state = 1;
+    }
+    delete data._id;
+    return response;
+};
+
+function setTimeStamp(date) {
+    let timestamp = {};
+    if (date != null) {
+        timestamp = {
+            'seconds': new Date(date).getTime()
+        }
+    } else {
+        timestamp = null;
+    }
+    return timestamp;
+}
