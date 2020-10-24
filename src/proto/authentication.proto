@@ -1,0 +1,42 @@
+
+syntax = "proto3";
+
+package abhyaas;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// The Authentication service definition.
+service AuthenticationService {
+  option (google.api.default_host) = "cloudresourcemanager.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/Labels,"
+      "https://www.googleapis.com/auth/Labels.read-only,"
+      "https://www.googleapis.com/auth/ResourceLabel,"
+      "https://www.googleapis.com/auth/ResourceLabel.read-only";
+
+  // Retrieves a Token
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=tokens/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+}
+
+message GetTokenRequest {
+  string user = 1;
+  string password = 2;
+}
+
+message GetTokenResponse {
+  string token = 1;
+}
+
+
+

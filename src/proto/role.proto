@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package abhyaas;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// The Role service definition.
+service RoleService {
+  option (google.api.default_host) = "cloudresourcemanager.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/Roles,"
+      "https://www.googleapis.com/auth/Roles.read-only";
+
+  // List provides a strongly consistent view of all roles.
+  // Filters and order by can be applied.
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {
+      get: "/v1/roles"
+    };
+    option (google.api.method_signature) = "filter";
+  }
+
+  // Retrieves a Role identified by the supplied resource name.
+  // Valid Role resource names have the format `roles/{role_id}`
+  // (for example, `roles/1234`).
+  rpc GetRole(GetRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      get: "/v1/{name=roles/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Creates a Role. In order to succeed, the addition of this new Role
+  // must not violate the following constraint:
+  //
+  // + The Role's display_name must be distinct from all other Roles.
+  //
+  // If the operation fails due to a role constraint violation, the
+  // error code FAILED_PRECONDITION is returned along with an error description.
+  rpc CreateRole(CreateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      post: "/v1/roles"
+      body: "role"
+    };
+  }
+
+  // Updates a Role, changing its display_name.
+  rpc UpdateRole(UpdateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      patch: "/v1/{role.name=roles/*}"
+      body: "role"
+    };
+    option (google.api.method_signature) = "role,update_mask";
+  }
+
+  // Requests deletion of a Role.
+  // error code FAILED_PRECONDITION is returned.
+  rpc DeleteRole(DeleteRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      delete: "/v1/{name=roles/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+}
+
+// The request message containing the Role's name,description
+message Role {
+  // Role lifecycle states.
+  enum LifecycleState {
+    // Unspecified state.
+    LIFECYCLE_STATE_UNSPECIFIED = 0;
+
+    // The normal and active state.
+    ACTIVE = 1;
+
+    // The Role has been marked for deletion by the user.
+    DELETE_REQUESTED = 2;
+  }
+
+  // Required. The resource name of the Role.
+  // Its format is `roles/{role_id}`
+  // for example: "roles/1".
+  // The name is ignored when creating a Role.
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The role’s display name.It is a REQUIRED
+  // A role’s display name must be unique amongst its siblings,
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED];
+
+  //OPTIONAL .One or more paragraphs of text description of a role.
+  string description = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Output only. Timestamp when the Role was created. Assigned by the server.
+  google.protobuf.Timestamp create_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Timestamp when the Role was last modified.
+  google.protobuf.Timestamp update_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Timestamp when the Role was last deleted.
+  google.protobuf.Timestamp delete_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The lifecycle state of the Role.
+  LifecycleState lifecycle_state = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// The CreateRole request message.
+message CreateRoleRequest {
+  // Required. The Role being created.
+  // `name` must be empty. Only `display_name` is considered.
+  Role Role = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+
+// The request message for updating a role's display name, description
+message UpdateRoleRequest {
+    // Required. The new definition of the Role. It must include a
+    // a `name` and `display_name` field. The other fields
+    // will be ignored.
+    Role Role = 1 [(google.api.field_behavior) = REQUIRED];
+
+    // Required. Provide fields that should be updated.
+    // Supported fields: `display_name`.
+    google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+  // The DeleteRole request message.
+message DeleteRoleRequest {
+    // Required. The resource name of the Role to be deleted.
+    // Must be of the form `roles/{role_id}`.
+    string name = 1 [
+      (google.api.field_behavior) = REQUIRED,
+      (google.api.resource_reference) = {
+        type: "Role"
+      }
+    ];
+}
+
+
+  // The GetRole request message.
+message GetRoleRequest {
+    // Required. The resource name of the Role to retrieve.
+    // Must be of the form `roles/{role_id}`.
+    string name = 1 [
+      (google.api.field_behavior) = REQUIRED,
+      (google.api.resource_reference) = {
+        type: "Role"
+      }
+    ];
+}
+
+// The ListRoles request message.
+message ListRolesRequest {
+  // Optional. The maximum number of Roles to return in the response.
+  // If the page size is not set, the default of 10 is taken.
+    int32 page_size = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A pagination token returned from a previous call to `ListRoles`
+  // that indicates where this listing should continue from.
+    string page_token = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Filter criteria used to select the Roles to return.
+  // If no filter criteria is specified then all accessible roles will be
+  // returned, regarding page_size.
+  //
+  // Query expressions can be used to restrict results based upon `display_name`,
+  // where the operators `=`,`>`,`>=`,`<=`,`<`, `NOT`, `AND`,  `OR` , `LIKE` where
+  // like can be used along with the suffix wildcard symbol `*`.
+  //
+  // String Fields, e.g., display_name in a query expression should use escaped quotes
+  // for values that include whitespace to prevent unexpected behavior.
+  //
+  // Some example queries are:
+  //
+  // * Query "display_name LIKE 'Test*'" returns Role resources whose display name
+  // starts with "Test".
+  // * Query "display_name = 'Test*'" returns the Role with the display name 'Test*'.
+  // * Query "display_name LIKE 'Test*' AND display_name = 'Test*'" shows the concatenation of criteria.
+  string filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Order the result set by field names.
+  // The default sorting order is ascending.
+  // To specify descending order for a field, a suffix " desc" must be appended to the field name.
+  // For example: "foo desc,bar"
+  // Redundant space characters in the syntax are insignificant.
+  // For example: "foo,bar desc" and "  foo ,  bar  desc  " are equivalent.
+  // Default order is by display_name ascending.
+  string order_by = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Displays deleted Roles
+  // Defaults to false.
+  bool show_deleted = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The ListRoles response message.
+message ListRolesResponse {
+  // A possibly paginated list of Roles.
+  repeated Role roles = 1;
+
+  // A pagination token returned from a previous call to `ListRoles`
+  // that indicates from where listing should continue.
+  string next_page_token = 2;
+
+  // The total count of the Roles regarding the reqest parameters.
+  int32 total_size = 3;
+}
+
