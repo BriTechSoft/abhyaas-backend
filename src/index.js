@@ -1,6 +1,6 @@
 require('dotenv').config();
 const path = require('path');
-let grpc = require("grpc");
+let grpc = require('@grpc/grpc-js');
 let protoLoader = require("@grpc/proto-loader");
 let AuthModule = require("./modules/authModule");
 let MediumModule = require("./modules/mediumModule");
@@ -8,7 +8,7 @@ let UserModule = require("./modules/userModule");
 let db = require("./db")
 
 const server = new grpc.Server();
-const HOST = process.env.HOST != undefined ? process.env.HOST : "localhost";
+const HOST = process.env.HOST != undefined ? process.env.HOST : "0.0.0.0";
 const PORT = process.env.PORT != undefined ? process.env.PORT : "50080";
 
 // Load protobuf
@@ -30,11 +30,17 @@ server.addService(proto.abhyaas.AuthenticationService.service, { GetToken: AuthM
 server.addService(proto.abhyaas.UserService.service, {
   CreateUser: UserModule.CreateUser,
   UpdateUser : UserModule.UpdateUser,
+  UpdateUserPassword : UserModule.UpdateUserPassword,
   DeleteUser : UserModule.DeleteUser,
   GetUser : UserModule.GetUser,
   ListUsers: UserModule.ListUsers
 });
 
-server.bind(`${HOST}:${PORT}`, grpc.ServerCredentials.createInsecure());
-
-server.start();
+server.bindAsync(`${HOST}:${PORT}`, grpc.ServerCredentials.createInsecure(), (error, port) => {
+  if (error) {
+    console.error(error);
+  } else {
+    console.log(`Server running at ${HOST}:${PORT}`)
+    server.start();
+  }
+});

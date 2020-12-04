@@ -1,7 +1,7 @@
 const User = require('../models/user.model.js');
 const commonModule = require('./common.module');
 const jsqlParserModule = require("./jsqlParserModule");
-var grpc = require('grpc');
+var grpc = require('@grpc/grpc-js');
 const bcrypt = require('bcryptjs');
 
 // Create and Save a new User
@@ -39,23 +39,23 @@ exports.CreateUser = (call, callback) => {
 exports.ListUsers = (call, callback) => {
     const page_size = call.request.page_size;
     const page_token = call.request.page_token;
-    let query = jsqlParserModule.getWhereClause(call.request.filter ,call.request.show_deleted);
+    let query = jsqlParserModule.getWhereClause(call.request.filter, call.request.show_deleted);
     const order_by_Object = commonModule.getOrderByObject(call.request.order_by);
 
     User.find(query)
-    .limit(page_size)
-    .skip(page_size * page_token)
-    .sort(order_by_Object)
-    .exec(function(err, users) {
-        var response = {
-            'users': users,
-            next_page_token: page_token + 1
-        }
-        User.count().exec(function(err1, count) {
-            response.total_size = count;
-            callback(null, response);
+        .limit(page_size)
+        .skip(page_size * page_token)
+        .sort(order_by_Object)
+        .exec(function (err, users) {
+            var response = {
+                'users': users,
+                next_page_token: page_token + 1
+            }
+            User.count().exec(function (err1, count) {
+                response.total_size = count;
+                callback(null, response);
+            })
         })
-    })
 };
 
 // Find a single user with a userId
@@ -65,10 +65,6 @@ exports.GetUser = (call, callback) => {
 
     User.findById(id)
         .then(data => {
-            if (!data) {
-                console.log(err)
-                callback(err);
-            }
             let response = commonModule.buildResponse("users", data)
             callback(null, response);
             console.log(`Successfully retrieved a user with user_id: ${response.user_id}`)
@@ -101,12 +97,10 @@ exports.UpdateUser = (call, callback) => {
     const id = commonModule.get_Id(user.name);
 
     // Find the user and update fields
-    User.findByIdAndUpdate(id, updateCollection, {new: true})
+    User.findByIdAndUpdate(id, updateCollection, {
+            new: true
+        })
         .then(data => {
-            if (!data) {
-                console.log(err)
-                callback(err);
-            }
             let response = commonModule.buildResponse("users", data)
             callback(null, response);
             console.log(`Successfully updated a user with user_id: ${response.user_id}`)
@@ -132,11 +126,51 @@ exports.DeleteUser = (call, callback) => {
             delete_time: new Date().toISOString()
         })
         .then(user => {
-            if (!user) {
-                console.log(err)
-                callback(err);
-            }
             let response = commonModule.buildResponse("users", user)
+            callback(null, response);
+            console.log(`Successfully updated a user with user_id: ${response.user_id}`)
+        }).catch(err => {
+            console.log(err)
+            callback(err);
+        });
+};
+
+// Update user identified by the userId in the request
+exports.UpdateUserPassword = (call, callback) => {
+    const user = call.request.user;
+    const update_mask = call.request.update_mask;
+
+    // Validate request
+    if (!user) {
+        callback({
+            code: grpc.status.INVALID_ARGUMENT,
+            message: "User not defined",
+        });
+    }
+
+    console.log(user)
+    // Encrypt Password
+    const hashedPassword = bcrypt.hashSync(user.password, 10);
+    user.password = hashedPassword;
+
+    let updateCollection = {};
+
+    update_mask.paths.forEach(e => {
+        console.log(e);
+        updateCollection[e] = user[e];
+    })
+
+    updateCollection.update_time = new Date().toISOString();
+
+    // Find the user and update fields
+    User.findOneAndUpdate({
+        "user_id": user.user_id
+        }, {$set:updateCollection} , {
+            new: true
+        })
+        .then(data => {
+            console.log(data)
+            let response = commonModule.buildResponse("users", data)
             callback(null, response);
             console.log(`Successfully updated a user with user_id: ${response.user_id}`)
         }).catch(err => {

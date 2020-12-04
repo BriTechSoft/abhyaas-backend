@@ -66,6 +66,17 @@ service UserService {
     option (google.api.method_signature) = "user,update_mask";
   }
 
+  // Updates a User password, changing its display_name.
+  // Changes to the User fields will be rejected on violations described in
+  // the [CreateUser][scudos.database.v1.CreateUser] documentation.
+  rpc UpdateUserPassword(UpdateUserRequest) returns (User) {
+    option (google.api.http) = {
+      patch: "/v1/{user.name=users/*}"
+      body: "user"
+    };
+    option (google.api.method_signature) = "user,update_mask";
+  }
+
   // Requests deletion of a User.
   // error code FAILED_PRECONDITION is returned.
   rpc DeleteUser(DeleteUserRequest) returns (User) {
